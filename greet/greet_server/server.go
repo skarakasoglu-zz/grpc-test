@@ -7,15 +7,32 @@ import (
 	"grpc-go-course/greet/greetpb"
 	"log"
 	"net"
+	"strconv"
 )
 
 type server struct{}
 
-func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
+func (s *server) GreetManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetManyTimesServer) error {
+	log.Println("Client invoked GreetManyTimes func")
+
+	firstName := req.GetGreeting().GetFirstName()
+
+	for i := 0; i < 10; i++ {
+		res := &greetpb.GreetManyTimesResponse{
+			Result: "Hello " + firstName + " number " + strconv.Itoa(i),
+		}
+
+		stream.Send(res)
+	}
+
+	return nil
+}
+
+func (s *server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
 	fmt.Printf("Greet function was invoked with %v\n", req)
 	firstName := req.Greeting.GetFirstName()
 	result := "Hello " + firstName
-	response := &greetpb.GreetResponse{Result:result}
+	response := &greetpb.GreetResponse{Result: result}
 
 	return response, nil
 }

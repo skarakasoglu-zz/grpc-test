@@ -12,6 +12,15 @@ message SumResponse {
     sint32 result = 1;
 }
 
+message CalculatePrimeNumberDecompositionRequest {
+    sint32 number = 1;
+}
+
+message CalculatePrimeNumberDecompositionResponse {
+    sint32 prime_number = 1;
+}
+
 service CalculatorService {
     rpc Sum(SumRequest) returns (SumResponse) {};
+    rpc CalculatePrimeNumberDecomposition(CalculatePrimeNumberDecompositionRequest) returns (stream CalculatePrimeNumberDecompositionResponse) {};
 }

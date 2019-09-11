@@ -11,7 +11,25 @@ import (
 
 type server struct{}
 
-func (*server) Sum(ctx context.Context, req *calculatorpb.SumRequest) (*calculatorpb.SumResponse, error) {
+func (s *server) CalculatePrimeNumberDecomposition(req *calculatorpb.CalculatePrimeNumberDecompositionRequest, stream calculatorpb.CalculatorService_CalculatePrimeNumberDecompositionServer) error {
+	log.Println("Client invoked to CalculatePrimeNumberDecomposition")
+	num := req.GetNumber()
+
+	k := int32(2)
+
+	for num > 1 {
+		if num%k == 0 {
+			stream.Send(&calculatorpb.CalculatePrimeNumberDecompositionResponse{PrimeNumber: k})
+			num /= k
+		} else {
+			k++
+		}
+	}
+
+	return nil
+}
+
+func (s *server) Sum(ctx context.Context, req *calculatorpb.SumRequest) (*calculatorpb.SumResponse, error) {
 	log.Printf("Client invoked to Sum function...\n")
 	firstNumber := req.GetNum1()
 	secondNumber := req.GetNum2()
