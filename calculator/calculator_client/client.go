@@ -19,8 +19,8 @@ func main() {
 	client := calculatorpb.NewCalculatorServiceClient(con)
 
 	// doUnary(client)
-
-	doServerStreaming(client)
+	// doServerStreaming(client)
+	doClientStreaming(client)
 }
 
 func doUnary(client calculatorpb.CalculatorServiceClient) {
@@ -56,4 +56,32 @@ func doServerStreaming(client calculatorpb.CalculatorServiceClient) {
 
 		log.Printf("Response: %v", val)
 	}
+}
+
+func doClientStreaming(client calculatorpb.CalculatorServiceClient) {
+	log.Println("Sending a call to ComputeAverage...")
+
+	values := []int32{1, 2, 3, 4}
+
+	stream, err := client.ComputeAverage(context.Background())
+	if err != nil {
+		log.Fatalf("failed while calling ComputeAverage: %v", err)
+	}
+
+	for _, val := range values {
+		req := calculatorpb.ComputeAverageRequest{Number:val}
+		err := stream.Send(&req)
+		if err != nil {
+			log.Fatalf("failed while sending to the stream: %v", err)
+		}
+		log.Printf("Message sent to the stream: %v\n", val)
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalf("failed while closing stream: %v", err)
+	}
+
+	log.Printf("Response: %v\n",resp)
+
 }

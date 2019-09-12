@@ -20,7 +20,16 @@ message CalculatePrimeNumberDecompositionResponse {
     sint32 prime_number = 1;
 }
 
+message ComputeAverageRequest {
+    sint32 number = 1;
+}
+
+message ComputeAverageResponse {
+    float average = 1;
+}
+
 service CalculatorService {
     rpc Sum(SumRequest) returns (SumResponse) {};
     rpc CalculatePrimeNumberDecomposition(CalculatePrimeNumberDecompositionRequest) returns (stream CalculatePrimeNumberDecompositionResponse) {};
+    rpc ComputeAverage(stream ComputeAverageRequest) returns(ComputeAverageResponse) {};
 }
