@@ -7,6 +7,7 @@ import (
 	"grpc-go-course/greet/greetpb"
 	"io"
 	"log"
+	"time"
 )
 
 func main() {
@@ -23,7 +24,8 @@ func main() {
 
 	// doUnary(client)
 	// doServerStreaming(client)
-	doClientStreaming(client)
+	// doClientStreaming(client)
+	doBiDiStreaming(client)
 }
 
 func doUnary(client greetpb.GreetServiceClient) {
@@ -100,4 +102,53 @@ func doClientStreaming(client greetpb.GreetServiceClient) {
 
 	log.Println(resp)
 
+}
+
+func doBiDiStreaming(client greetpb.GreetServiceClient) {
+	log.Println("Starting to do a bidi streaming RPC...")
+
+	people := []*greetpb.GreetEveryoneRequest{
+		&greetpb.GreetEveryoneRequest{Greeting: &greetpb.Greeting{FirstName: "Roberto"}},
+		&greetpb.GreetEveryoneRequest{Greeting: &greetpb.Greeting{FirstName: "Sadio"}},
+		&greetpb.GreetEveryoneRequest{Greeting: &greetpb.Greeting{FirstName: "Wijnaldum"}},
+	}
+
+	stream, err := client.GreetEveryone(context.Background())
+	if err != nil {
+		log.Fatalf("failed to call GreetEveryone: %v", err)
+	}
+
+	waitc := make(chan struct{})
+
+	go func() {
+		for _, req := range people {
+			log.Printf("Sending: %v\n", req)
+			err := stream.Send(req)
+			if err == io.EOF {
+				close(waitc)
+				break
+			}
+			if err != nil {
+				log.Fatalf("failed to send to stream: %v", err)
+			}
+			time.Sleep(1000 * time.Millisecond)
+		}
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				close(waitc)
+				break
+			}
+			if err != nil {
+				log.Fatalf("failed to receive from stream: %v", err)
+			}
+			log.Printf("Receieved: %v\n", res)
+		}
+	}()
+
+	<-waitc
 }

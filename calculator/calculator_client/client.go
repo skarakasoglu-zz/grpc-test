@@ -6,6 +6,7 @@ import (
 	"grpc-go-course/calculator/calculatorpb"
 	"io"
 	"log"
+	"time"
 )
 
 func main() {
@@ -20,7 +21,8 @@ func main() {
 
 	// doUnary(client)
 	// doServerStreaming(client)
-	doClientStreaming(client)
+	// doClientStreaming(client)
+	doBiDiStreaming(client)
 }
 
 func doUnary(client calculatorpb.CalculatorServiceClient) {
@@ -84,4 +86,51 @@ func doClientStreaming(client calculatorpb.CalculatorServiceClient) {
 
 	log.Printf("Response: %v\n",resp)
 
+}
+
+func doBiDiStreaming(client calculatorpb.CalculatorServiceClient) {
+	log.Println("Sending a call to FindMaximum...")
+
+	values := []int32{9, 7, 15, 23, 45}
+
+	stream, err := client.FindMaximum(context.Background())
+	if err != nil {
+		log.Fatalf("failed to do call to FindMaximum: %v", err)
+	}
+
+	waitc := make(chan struct{})
+
+	go func() {
+		for _, val := range values {
+			req := &calculatorpb.FindMaximumRequest{Number: val}
+			log.Printf("Sending: %v\n", req)
+			err := stream.Send(req)
+			if err == io.EOF {
+				close(waitc)
+				break
+			}
+			if err != nil {
+				log.Fatalf("failed to send to the stream: %v", err)
+			}
+			time.Sleep(1000 * time.Millisecond)
+		}
+
+		stream.CloseSend()
+	}()
+
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				close(waitc)
+				break
+			}
+			if err != nil {
+				break
+			}
+			log.Printf("Received: %v\n", res)
+		}
+	}()
+
+	<-waitc
 }

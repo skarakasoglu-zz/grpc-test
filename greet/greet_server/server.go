@@ -13,6 +13,26 @@ import (
 
 type server struct{}
 
+func (s *server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	log.Println("Client invoked GreetEveryone func")
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Fatalf("failed to recieve: %v", err)
+			return err
+		}
+		firstName := req.Greeting.GetFirstName()
+		result := "Hello " + firstName + "! "
+		res := &greetpb.GreetEveryoneResponse{Result:result}
+		stream.Send(res)
+	}
+
+}
+
 func (s *server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	log.Println("Client invoked GreetManyTimes func")
 	result := ""
